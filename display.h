@@ -1,4 +1,4 @@
-#define BR_PIN A6
+#define BR_PIN 8
 #include <string.h>
 #include <avr/pgmspace.h>
 
@@ -19,73 +19,36 @@ const char* const effects[] PROGMEM = {effects0, effects1, effects2, effects3};
 
 struct Display{
 public:
-  // LiquidCrystal_I2C lcd;
-  // byte br = 100;
-  // bool blinkM;
-  // bool blinkH;
-  // Display(): lcd(0x27, 20 , 4){}
-  // void setup(){
-  //   pinMode(BR_PIN, OUTPUT);
-  //   analogWrite(BR_PIN, br);
-  
+  LiquidCrystal_I2C lcd;
+  byte br = 50;
+//   bool blinkM;
+//   bool blinkH;
+  Display(): lcd(0x27, 20 , 4){}
+  void setup(byte hour, byte min);
+  void printTime(byte hour, byte min);
+  void printMenu(byte current, byte first);
+  void updateMenu(byte encState, byte& menuCurrent, byte& menuFirst);
+  void setBr(byte encState);
 
-  //   lcd.init();
-  //   lcd.backlight();
-  //   for(int i = 0; i < 8; i++){
-  //     lcd.createChar(i, custChar[i]);
-  //   }
-  //   printTime(hour, min);
-  // }
-  
-  void printTime(byte hour, byte min){
-      printDsp(floor(hour/10), 0);
-      printDsp(floor(hour%10), 1);
-      printDsp(10, 0);
-      printDsp(floor(min/10), 2);
-      printDsp(floor(min%10), 3);
-  }
-  // void printSettings(byte st_current, byte st_first){
-  //   char buffer[30];
- 
-  //   for(int i = 0; i < 4; i++){
-  //     lcd.setCursor(0, i);
-  //     lcd.print(" ");
-  //   }
-  //   lcd.setCursor(0, st_current - st_first);
-  //   lcd.print(">");
+//   // }
+//   // void printEffects(byte st_currentE, byte st_firstE){
+//   //   char buffer[30];
 
-  //   for(int i = 0; i < 4; i++){
-  //     lcd.setCursor(1, i);
-  //     //lcd.print("                   ");
-  //     lcd.setCursor(1, i);
-  //     strcpy_P(buffer, (char*)pgm_read_word(&(menu[st_first + i])));
-  //     lcd.print(buffer);
-  //     //for(int j = 0; j < 19 - sizeof(buffer); j++) lcd.print(" ");
-  //   }
+//   //   for(int i = 0; i < 4; i++){
+//   //     lcd.setCursor(0, i);
+//   //     lcd.print(" ");
+//   //   }
+//   //   lcd.setCursor(0, st_currentE - st_firstE);
+//   //   lcd.print(">");
 
-  // }
-  // void printEffects(byte st_currentE, byte st_firstE){
-  //   char buffer[30];
-
-  //   for(int i = 0; i < 4; i++){
-  //     lcd.setCursor(0, i);
-  //     lcd.print(" ");
-  //   }
-  //   lcd.setCursor(0, st_currentE - st_firstE);
-  //   lcd.print(">");
-
-  //   for(int i = 0; i < 4; i++){
-  //     lcd.setCursor(1, i);
-  //     strcpy_P(buffer, (char*)pgm_read_word(&(effects[st_firstE + i])));
-  //     lcd.print(buffer);
-  //   }
-  // }
-  // void printNum(byte num){
-  //     printDsp(floor(num / 100), 1);
-  //     printDsp(floor((num % 100) / 10), 2);
-  //     printDsp(num % 10, 3);
-  // }
-  // void clear(){ lcd.clear();}
+//   //   for(int i = 0; i < 4; i++){
+//   //     lcd.setCursor(1, i);
+//   //     strcpy_P(buffer, (char*)pgm_read_word(&(effects[st_firstE + i])));
+//   //     lcd.print(buffer);
+//   //   }
+//   // }
+  void printNum(byte number);
+    void clear(){ lcd.clear();}
 private:
   byte custChar[8][8] = {
     {31, 31, 31, 31, 31, 0, 0, 0},//five up
@@ -110,9 +73,50 @@ private:
     {255, 0, 0, 255, 255, 2, 2, 255, 3, 3, 3, 255, 1, 1, 1, 255},
     {4, 6, 5, 7, 4, 6, 5, 7}
   };
-  printDsp(byte number, byte place);
- 
+  void printDsp(byte number, byte place);
 };
+
+void Display::printNum(byte number){
+      printDsp(floor(number / 100), 1);
+      printDsp(floor((number % 100) / 10), 2);
+      printDsp(number % 10, 3);
+}
+
+void Display::setup(byte hour, byte min){
+  pinMode(BR_PIN, OUTPUT);
+  analogWrite(BR_PIN, br);
+  lcd.init();
+  lcd.backlight();
+  for(int i = 0; i < 8; i++){
+    lcd.createChar(i, custChar[i]);
+  }
+  printTime(hour, min);
+}
+
+void Display::printTime(byte hour, byte min){
+  printDsp(floor(hour/10), 0);
+  printDsp(hour%10, 1);
+  printDsp(10, 0);
+  printDsp(floor(min/10), 2);
+  printDsp(min%10, 3);
+}//hour 0-23, min 0-59
+
+void Display::printMenu(byte current, byte first){
+     char buffer[30];
+ 
+     for(int i = 0; i < 4; i++){
+       lcd.setCursor(0, i);
+       lcd.print(" ");
+     }
+     lcd.setCursor(0, current - first);
+     lcd.print(">");
+
+     for(int i = 0; i < 4; i++){
+      lcd.setCursor(1, i);
+      strcpy_P(buffer, (char*)pgm_read_word(&(menu[first + i])));
+      lcd.print(buffer);
+     }
+}
 
 void Display::printDsp(byte number, byte place){
   if(number == 10){
@@ -132,7 +136,71 @@ void Display::printDsp(byte number, byte place){
         }
       }
   }
-}// place 0-3, number 0-10; 10 are dots
+  }
+// place 0-3, number 0-10; 10 are dots
+
+void Display::updateMenu(byte encState, byte& menuCurrent, byte& menuFirst){
+  bool print = 0;
+  bool clearDsp = 0;
+  if(encState == 2){
+    if(menuCurrent == 0){
+      menuCurrent = MENULAST;
+      menuFirst = MENULAST - 3;
+      clearDsp = 1;
+      print = 1;
+    }else if(menuCurrent != menuFirst){
+      menuCurrent--;
+      print = 1;
+    }else{
+      menuCurrent--;
+      menuFirst--;
+      clearDsp = 1;
+      print = 1;
+    }
+  }else if(encState == 3){
+    if(menuCurrent == MENULAST){
+      menuCurrent = 0;
+      menuFirst = 0;
+      clearDsp = 1;
+      print = 1;
+    }else if(menuCurrent != menuFirst + 3){
+      menuCurrent++;
+      print = 1;
+    }else{
+      menuCurrent++;
+      menuFirst++;
+      clearDsp = 1;
+      print = 1;
+    }
+  }
+  if(clearDsp) clear();
+  if(print) printMenu(menuCurrent, menuFirst);
+}
+
+void Display::setBr(byte encState){
+  switch(encState){
+    case 2:
+      if(br == 0) br = 255;
+      else br--;
+      printNum(br);
+    break;
+    case 3:
+      if(br == 255) br = 0;
+      else br++;
+      printNum(br);
+    break;
+    case 5:
+      if(br > 9) br-=10;
+      printNum(br);
+    break;
+    case 6:
+      if(br < 246) br+=10;
+      printNum(br);
+    break;
+  }
+}
+
+
 
 
 
