@@ -1,0 +1,7 @@
+#1 fix alarm not working
+#2 feat add colour to effects
+#3 feat add flow to effects
+#4 feat add colour change to effects
+#5 feat add random to effects
+#6 feat add drift to effects
+#7 feat add snake to effects
