@@ -2,7 +2,7 @@
 #ifndef _TIME_
 #define _TIME_
 
-#define BR_MAX 140
+#define BR_MAX 110
 #define DAWN_TIME 5  // продолжительность рассвета (в минутах)
 
 #include <RTClib.h>

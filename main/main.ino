@@ -47,8 +47,11 @@ void setup(){
 }
 void loop(){
   enc.updateEncoder();
-  time.update();
-  alarm.update(time, led, enc.getEncstate());
+  if(currentFunc != SETTIME){
+    time.update();
+    if(currentFunc != SETALARM) alarm.update(time, led, enc.getEncstate());
+  }
+
   updateCurrentFunc();
 }
 
@@ -78,8 +81,6 @@ void updateNodetype(){
     current->setCurrent(0);
     current->setFirst(0);
     dsp.printList(*current);
-
-
   }else if(next->getNodetype() == List::NodeType::VALUE){ // VALUE
 
     currentFunc = SETVAL;

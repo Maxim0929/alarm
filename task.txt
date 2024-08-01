@@ -1,4 +1,5 @@
 #1 fix alarm not working
+#1.1 fix time is to slow
 #2 feat add colour to effects
 #3 feat add flow to effects
 #4 feat add colour change to effects
