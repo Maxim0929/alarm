@@ -22,7 +22,6 @@ void Eprom::write(const String& name, uint8_t value){
     }
     if(name == crnName){
       EEPROM.write(EEPROM.read(address), value);
-      Serial.println("exist");
       break;
     }else{
       address = EEPROM.read(address) + 1;
@@ -37,7 +36,6 @@ void Eprom::write(const String& name, uint8_t value){
     }
     EEPROM.write(EEPROM.read(address), value); // value
     EEPROM.write(EEPROM.read(address) + 1, 0);
-    Serial.println("not exist");
   }
   
 }

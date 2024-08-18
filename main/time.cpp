@@ -107,6 +107,7 @@ void Alarm::update(const Time& time, const Led& led, const uint8_t encState){
       led.setBrightness(alarmBr);
     }
   }else if(time.getHour() == hour && time.getMin() == min){
+    alarmBr = 0;
     led.setBrightness(0);
     led.fill(255,255,255);
     isAlarm = 1;

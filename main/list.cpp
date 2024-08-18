@@ -10,6 +10,7 @@ List::List(){
   this->next = nullptr;
   this->prev = nullptr;
   this->value = 0;
+  this->maxValue = 255;
   ID = IDcounter;
 }
 
@@ -24,6 +25,7 @@ void List::initList(const char* name){
   this->next = nullptr;
   this->prev = nullptr;
   this->value = 0;
+  this->maxValue = 255;
   ID = IDcounter;
 }
 
@@ -38,6 +40,13 @@ void List::initList(const char* name, uint8_t value, NodeType nodeType){
   if(nodeType == LIST) next = new List[value];
   else IDcounter++;
   this->value = value;
+}
+void List::initList(const char* name, uint8_t value, int maxValue){
+  initList(name);
+  this->value = value;
+  this->nodeType = VALUE;
+  this->maxValue = maxValue;
+  IDcounter++;
 }
 
 
@@ -95,7 +104,10 @@ uint8_t List::getFirst(){return first;}
 void List::setCurrent(uint8_t current){List::current = current;}
 void List::setFirst(uint8_t first){List::first = first;}
 
-int List::getValue(){return this->value;}
+int List::getValue(bool isReal){
+  if(isReal) return value; 
+  else return round(value / 255.0 * maxValue);
+}
 void List::setValue(int value){ this->value = value;}
 
 char* List::getName(){return this->name;}
@@ -104,6 +116,8 @@ void List::setName(char* name){this->name = name;}
 List::NodeType List::getNodetype(){return nodeType;}
 
 uint8_t List::getID(){ return ID;}
+
+int List::getMaxValue(){ return maxValue; }
 
 
 

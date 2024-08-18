@@ -10,7 +10,6 @@ struct Display;
 struct Time;
 struct Alarm;
 
-enum Effect{ NONE, COLOUR, FLOW, COLOURCHANGE, RANDOM, DRIFT, SNAKE};
 struct List{
 public:
   enum NodeType{LIST, FUNCTION, VALUE, NONE};
@@ -24,6 +23,7 @@ public:
   void initList(const char* name);
   void initList(const char* name, List *prev);
   void initList(const char* name, uint8_t value, NodeType nodeType);
+  void List::initList(const char* name, uint8_t value, int maxValue);
 
   void update(uint8_t encState, const Display& dsp);
 
@@ -33,7 +33,7 @@ public:
   void setCurrent(uint8_t current);
   void setFirst(uint8_t first);
 
-  int getValue();
+  int getValue(bool isReal);
   void setValue(int value);
 
   char* getName();
@@ -43,7 +43,7 @@ public:
 
   uint8_t getID();
 
-
+  int getMaxValue();
 
   List& operator=(const List& other);
   List* next;
@@ -56,6 +56,7 @@ private:
   int value;
   char* name;
   uint8_t ID;
+  int maxValue;
 };
 #endif
 

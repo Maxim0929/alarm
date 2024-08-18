@@ -22,13 +22,6 @@ void Display::setup(){
   }
 }
 
-void Display::printTime(uint8_t hour, uint8_t min){
-  printDsp(floor(hour/10), 0);
-  printDsp(hour%10, 1);
-  printDsp(10, 0);
-  printDsp(floor(min/10), 2);
-  printDsp(min%10, 3);
-}//hour 0-23, min 0-59
 
 void Display::printList(const List& list, bool doClear){
   uint8_t max = 4;
@@ -44,7 +37,7 @@ void Display::printList(const List& list, bool doClear){
   lcd.setCursor(0, list.getCurrent() - list.getFirst());
   lcd.print(">");
   if(doClear){
-    if(list.getValue() < 4) max = 3;
+    if(list.getValue(1) < 4) max = 3;
     for(int i = 0; i < max; i++){
       lcd.setCursor(1, i);
       lcd.print(list.next[list.getFirst() + i].getName());
@@ -52,6 +45,14 @@ void Display::printList(const List& list, bool doClear){
   }
 }//list: o - menu, 1 - effects, 2 - trait
 void Display::printList(const List& list){ printList(list, 1); }
+
+void Display::printTime(uint8_t hour, uint8_t min){
+  printDsp(floor(hour/10), 0);
+  printDsp(hour%10, 1);
+  printDsp(10, 0);
+  printDsp(floor(min/10), 2);
+  printDsp(min%10, 3);
+}//hour 0-23, min 0-59
 
 void Display::printDsp(uint8_t number, uint8_t place){
   if(number == 10){
