@@ -5,9 +5,10 @@
 #include "display.h"
 #include "time.h"
 
+
 #define MENULAST 4
 #define EFFECTLAST 7
-//test fillHSV
+//timer
 enum Func{TIME, SETVAL, SETTIME, SETALARM, NONEFUNC};
 
 void listClick();
@@ -32,38 +33,52 @@ Alarm alarm;
 
 Func currentFunc = TIME;
 
+Metro backTimer = Metro(5000);
+
 void setup(){
   Serial.begin(9600);
   dsp.setup();
-  led.init();
   initMenu(menu);
+  led.init(menu.next[3]);
   current = &menu;
   time.init();
   alarm.init(epr);
+  dsp.printTime(time.getHour(), time.getMin());
 }
 void loop(){
-  enc.updateEncoder();
+  if(enc.updateEncoder())
+    update();
+
   if(currentFunc != SETTIME){
-    time.update();
-    if(currentFunc != SETALARM) alarm.update(time, led, enc.getEncstate());
+    if(time.update()){
+      if(currentFunc == TIME)
+        dsp.printTime(time.getHour(), time.getMin());
+      if(currentFunc != SETALARM) alarm.update(time, led, enc.getEncstate());
+    }
   }
-  update();
+  if(currentFunc == TIME)
+    led.updateStrip(menu.next[3], 0);
+
+  if(backTimer.check() && currentFunc != TIME){
+    currentFunc = TIME;
+    dsp.clear();
+    dsp.printTime(time.getHour(), time.getMin());
+  }
 }
 
 
 void update(){
+  backTimer.reset();
   if(currentFunc == TIME){
     if(enc.getEncstate() == 4){
       currentFunc = NONEFUNC;
       dsp.printList(*current, 1);
-    }else{
-      dsp.printTime(time.getHour(), time.getMin());
     }
   }else if(currentFunc == NONEFUNC){
-    if(enc.getEncstate() == 1){
+    if(enc.getEncstate() == 1)
       listClick();
-    }
-    current->update(enc.getEncstate(), dsp);
+    else
+      current->update(enc.getEncstate(), dsp);
   }else{
     set();
   }
@@ -78,7 +93,7 @@ void listClick(){
     dsp.printList(*current);
     if(current->getName() != "EFFECTS"){
       led.setStripState(current->getName());
-      led.updateStrip(menu.next[3]);
+      led.updateStrip(menu.next[3], 1);
     }
   }else if(next->getNodetype() == List::NodeType::VALUE){ // VALUE
     currentFunc = SETVAL;
@@ -100,6 +115,7 @@ void listClick(){
     }else if(next->getName() == "BACK"){
       if(current->getName() == "MENU"){
         dsp.clear();
+        dsp.printTime(time.getHour(), time.getMin());
         currentFunc = TIME;
       } 
       else {
@@ -111,7 +127,7 @@ void listClick(){
       }
     }else if(next->getName() == "OFF"){      
       led.setStripState("OFF");
-      led.updateStrip(menu.next[3]);
+      led.updateStrip(menu.next[3], 1);
     }
   }
 }
@@ -125,17 +141,13 @@ void set(){
          dsp.setBr(current->next[current->getCurrent()].getValue(0));
 
       dsp.printList(*current);
-      led.updateStrip(menu.next[3]);
+      led.updateStrip(menu.next[3], 1);
     }
-
-
   }else if(currentFunc == SETTIME){
     if(time.set(enc.getEncstate())){
       currentFunc = NONEFUNC;
       dsp.printList(*current);
     }else if(enc.getEncstate() != 0) dsp.printTime(time.getHour(), time.getMin());
-
-
   }else if(currentFunc == SETALARM){
       if(alarm.set(enc.getEncstate(), epr)){
         currentFunc = NONEFUNC;

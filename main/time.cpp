@@ -2,7 +2,8 @@
 #include "led.h"
 
 
-Time::Time(): clockTimer(60000){
+Time::Time(){
+  clockTimer = Metro(60000);
 }
 
 void Time::init(){
@@ -18,8 +19,8 @@ void Time::init(){
     }
     setHour = 1;
 }
-void Time::update(){
-   if(clockTimer.isReady()){
+bool Time::update(){
+   if(clockTimer.check()){
     min++;
     if(min % 10 == 0){
       now = rtc.now();
@@ -30,7 +31,10 @@ void Time::update(){
       hour++;
       if(hour > 23) hour = 0;
     }
+    clockTimer.reset();
+    return 1;
   }
+  return 0;
 }
 
 bool Time::set(const uint8_t encState){
@@ -86,7 +90,8 @@ uint8_t Time::getMin(){return min;}
 
 
 
-Alarm::Alarm(): clockTimer(((unsigned long)DAWN_TIME * (unsigned long)60* (unsigned long)1000) / (unsigned long)BR_MAX){
+Alarm::Alarm(){
+  clockTimer = Metro(((unsigned long)DAWN_TIME * (unsigned long)60* (unsigned long)1000) / (unsigned long)BR_MAX);
   isAlarm = 0;
   alarmBr = 0;
   setHour = 1;
@@ -102,9 +107,10 @@ void Alarm::update(const Time& time, const Led& led, const uint8_t encState){
       led.fill(0,0,0);
       isAlarm = 0;
     }
-    if(clockTimer.isReady() && alarmBr <= BR_MAX){
+    if(clockTimer.check() && alarmBr <= BR_MAX){
       alarmBr++;
       led.setBrightness(alarmBr);
+      clockTimer.reset();
     }
   }else if(time.getHour() == hour && time.getMin() == min){
     alarmBr = 0;

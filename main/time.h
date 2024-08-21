@@ -6,7 +6,7 @@
 #define DAWN_TIME 5  // продолжительность рассвета (в минутах)
 
 #include <RTClib.h>
-#include "GyverTimer.h"
+#include <Metro.h>
 #include <Arduino.h>
 
 #include"led.h"
@@ -18,13 +18,13 @@ struct Time{
 public:
   Time();
   void init();
-  void update();
+  bool update();
   bool set(const uint8_t encState);
   uint8_t getHour();
   uint8_t getMin();
 
 private:
-  GTimer_ms clockTimer;
+  Metro clockTimer;
   RTC_DS3231 rtc;
   uint8_t hour;
   uint8_t min;
@@ -41,7 +41,7 @@ public:
   uint8_t getHour();
   uint8_t getMin();
 private:
-  GTimer_ms clockTimer;
+  Metro clockTimer;
   bool isAlarm;
   uint8_t alarmBr;
   uint8_t hour;

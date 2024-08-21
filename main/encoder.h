@@ -12,7 +12,7 @@
 struct MyEncoder{
 public:
   MyEncoder();
-  void updateEncoder();
+  bool updateEncoder();
   uint8_t getEncstate();
 private:
   Encoder enc;
