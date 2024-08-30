@@ -4,6 +4,7 @@
 
 #define BR_MAX 110
 #define DAWN_TIME 5  // продолжительность рассвета (в минутах)
+#define ALARM_LED_NUM 340
 
 #include <RTClib.h>
 #include <Metro.h>
@@ -40,6 +41,7 @@ public:
   void update(const Time& time, const Led& led, const uint8_t encState);
   uint8_t getHour();
   uint8_t getMin();
+  bool getisAlarm();
 private:
   Metro clockTimer;
   bool isAlarm;

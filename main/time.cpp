@@ -115,7 +115,7 @@ void Alarm::update(const Time& time, const Led& led, const uint8_t encState){
   }else if(time.getHour() == hour && time.getMin() == min){
     alarmBr = 0;
     led.setBrightness(0);
-    led.fill(255,255,255);
+    led.fill(255,255,255, ALARM_LED_NUM);
     isAlarm = 1;
   }
 }
@@ -171,3 +171,7 @@ bool Alarm::set(const uint8_t encState, const Eprom& eprom){
 
 uint8_t Alarm::getHour(){return hour;}
 uint8_t Alarm::getMin(){return min;}
+
+bool Alarm::getisAlarm(){
+  return isAlarm;
+}

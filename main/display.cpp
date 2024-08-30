@@ -4,7 +4,6 @@
 
 
 Display::Display(): lcd(0x27, 20 , 4){
-  br = 50;
 }
 void Display::printNum(uint8_t number){
       printDsp(floor(number / 100), 1);
@@ -12,7 +11,8 @@ void Display::printNum(uint8_t number){
       printDsp(number % 10, 3);
 }
 
-void Display::setup(){
+void Display::setup(const List& menu){
+  br = menu.next.getPtr("DISPLAY BRIGHTNESS")->getValue(0);
   pinMode(BR_PIN, OUTPUT);
   analogWrite(BR_PIN, br);
   lcd.init();
@@ -37,10 +37,10 @@ void Display::printList(const List& list, bool doClear){
   lcd.setCursor(0, list.getCurrent() - list.getFirst());
   lcd.print(">");
   if(doClear){
-    if(list.getValue(1) < 4) max = 3;
+    if(list.getValue(0) < 4) max = 3;
     for(int i = 0; i < max; i++){
       lcd.setCursor(1, i);
-      lcd.print(list.next[list.getFirst() + i].getName());
+      lcd.print(list.next.getPtr(list.getFirst() + i)->getName());
     }
   }
 }//list: o - menu, 1 - effects, 2 - trait

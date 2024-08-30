@@ -15,7 +15,7 @@ struct Eprom;
 struct Display{
 public:
   Display();
-  void setup();
+  void setup(const List& menu);
   void printTime(uint8_t hour, uint8_t min);
   void printList(const List& list, bool doClear);
   void printList(const List& list);

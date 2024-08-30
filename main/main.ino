@@ -6,13 +6,12 @@
 #include "time.h"
 
 
-#define MENULAST 4
+#define MENULAST 5
 #define EFFECTLAST 7
-//timer
 enum Func{TIME, SETVAL, SETTIME, SETALARM, NONEFUNC};
 
 void listClick();
-List& initMenu();
+void initMenu(List & menu);
 bool setVal(uint8_t encState, const List& list);
 void update();
 
@@ -37,9 +36,9 @@ Metro backTimer = Metro(5000);
 
 void setup(){
   Serial.begin(9600);
-  dsp.setup();
   initMenu(menu);
-  led.init(menu.next[3]);
+  dsp.setup(menu);
+  led.init(&menu);
   current = &menu;
   time.init();
   alarm.init(epr);
@@ -48,6 +47,8 @@ void setup(){
 void loop(){
   if(enc.updateEncoder())
     update();
+  if(alarm.getisAlarm())
+    alarm.update(time, led, enc.getEncstate());
 
   if(currentFunc != SETTIME){
     if(time.update()){
@@ -57,7 +58,7 @@ void loop(){
     }
   }
   if(currentFunc == TIME)
-    led.updateStrip(menu.next[3], 0);
+    led.updateStrip(*menu.next.getPtr("EFFECTS"), 0);
 
   if(backTimer.check() && currentFunc != TIME){
     currentFunc = TIME;
@@ -85,7 +86,7 @@ void update(){
 }
 void listClick(){
   List* next;
-  next = &(current->next[current->getCurrent()]);
+  next = current->next.getPtr(current->getCurrent());
   if(next->getNodetype() == List::NodeType::LIST){//LIST
     current = next;
     current->setCurrent(0);
@@ -93,7 +94,7 @@ void listClick(){
     dsp.printList(*current);
     if(current->getName() != "EFFECTS"){
       led.setStripState(current->getName());
-      led.updateStrip(menu.next[3], 1);
+      led.updateStrip(*menu.next.getPtr("EFFECTS"), 1);
     }
   }else if(next->getNodetype() == List::NodeType::VALUE){ // VALUE
     currentFunc = SETVAL;
@@ -127,21 +128,23 @@ void listClick(){
       }
     }else if(next->getName() == "OFF"){      
       led.setStripState("OFF");
-      led.updateStrip(menu.next[3], 1);
+      led.updateStrip(*menu.next.getPtr("EFFECTS"), 1);
     }
   }
 }
 
 void set(){
   if(currentFunc == SETVAL){
-    if(setVal(enc.getEncstate(), current->next[current->getCurrent()])){
+    if(setVal(enc.getEncstate(), *current->next.getPtr(current->getCurrent()))){
       currentFunc = NONEFUNC;
 
-      if(current->next[current->getCurrent()].getName() == "DISPLAY BRIGHTNESS")
-         dsp.setBr(current->next[current->getCurrent()].getValue(0));
+      if(current->next.getPtr(current->getCurrent())->getName() == "DISPLAY BRIGHTNESS")
+        dsp.setBr(current->next.getPtr(current->getCurrent())->getValue(0));
+      else if(current->next.getPtr(current->getCurrent())->getName() == "LED BRIGHTNESS")
+        led.setBr(current->next.getPtr(current->getCurrent())->getValue(0));
 
       dsp.printList(*current);
-      led.updateStrip(menu.next[3], 1);
+      led.updateStrip(*menu.next.getPtr("EFFECTS"), 1);
     }
   }else if(currentFunc == SETTIME){
     if(time.set(enc.getEncstate())){
@@ -157,55 +160,77 @@ void set(){
 }
 
 void initMenu(List & menu){
-  menu.initList("MENU", MENULAST + 1, List::NodeType::LIST);// initilize menu
-  menu.next[0].initList("SETTIME");
-  menu.next[1].initList("SETALARM");
-  menu.next[2].initList("DISPLAY BRIGHTNESS", epr.read("DISPLAY BRIGHTNESS" + 0), 255);
-  menu.next[3].initList("EFFECTS", EFFECTLAST + 1, List::NodeType::LIST);
-  menu.next[4].initList("BACK");/////////////////////
-  
-  List *current = &menu.next[3];//initilize effects
-  current->next[0].initList("OFF");
-  current->next[1].initList("COLOUR", 3, List::NodeType::LIST);
-  current->next[2].initList("FLOW", 4, List::NodeType::LIST);
-  current->next[3].initList("COLOUR CHANGE", 5, List::NodeType::LIST);
-  current->next[4].initList("RANDOM", 3, List::NodeType::LIST);
-  current->next[5].initList("DRIFT", 3, List::NodeType::LIST);
-  current->next[6].initList("SNAKE", 3, List::NodeType::LIST);
-  current->next[7].initList("BACK", &menu);
+  uint8_t eprID = 0;
 
-  current = &menu.next[3].next[1];//initilize COLOUR
-  current->next[0].initList("COLOUR", epr.read("COLOUR" + 1), 359);
-  current->next[1].initList("AMOUNT", epr.read("AMOUNT" + 2), 600);
-  current->next[2].initList("BACK", &menu.next[3]);
+  static const char* names1[] = {"EFFECTS", "SETALARM", "SETTIME", "DISPLAY BRIGHTNESS", "LED BRIGHTNESS", "BACK", nullptr};// initilize menu
+  menu.initList("MENU", MENULAST + 1, names1);
 
-  current = &menu.next[3].next[2];//initilize FLOW
-  current->next[0].initList("COLOUR", epr.read("COLOUR" + 3), 359);
-  current->next[1].initList("AMOUNT", epr.read("AMOUNT" + 4), 600);
-  current->next[2].initList("SPEED", epr.read("SPEED" + 5), List::NodeType::VALUE);
-  current->next[3].initList("BACK", &menu.next[3]);
+  static const char* names2[] = {"OFF", "COLOUR", "FLOW", "COLOUR CHANGE", "RANDOM", "DRIFT", "SNAKE", "BACK", nullptr};
+  menu.next.getPtr("EFFECTS")->initList("EFFECTS", EFFECTLAST + 1, names2);
+  menu.next.getPtr("SETALARM")->initList("SETALARM");
+  menu.next.getPtr("SETTIME")->initList("SETTIME");
+  menu.next.getPtr("DISPLAY BRIGHTNESS")->initList("DISPLAY BRIGHTNESS", epr.read("DISPLAY BRIGHTNESS" + eprID++), 255);
+  menu.next.getPtr("LED BRIGHTNESS")->initList("LED BRIGHTNESS", epr.read("LED BRIGHTNESS" + eprID++), 255);//epr.read("LED BRIGHTNESS" + eprID++)
+  menu.next.getPtr("BACK")->initList("BACK");
 
-  current = &menu.next[3].next[3];//initilize COLOUR CHANGE
-  current->next[0].initList("COLOUR FROM", epr.read("COLOUR FROM" + 6), 359);
-  current->next[1].initList("COLOUR TO", epr.read("COLOUR TO" + 7), 359);
-  current->next[2].initList("AMOUNT", epr.read("AMOUNT" + 8), 600);
-  current->next[3].initList("SPEED", epr.read("SPEED" + 9), List::NodeType::VALUE);
-  current->next[4].initList("BACK", &menu.next[3]);
 
-  current = &menu.next[3].next[4];//initilize RANDOM
-  current->next[0].initList("SPEED", epr.read("SPEED" + 10), List::NodeType::VALUE);
-  current->next[1].initList("AMOUNT", epr.read("AMOUNT"+ 11), 600);
-  current->next[2].initList("BACK", &menu.next[3]);
+  List *current = menu.next.getPtr("EFFECTS");//initilize effects
+  current->next.getPtr("OFF")->initList("OFF");
 
-  current = &menu.next[3].next[5];//initilize DRIFT
-  current->next[0].initList("SPEED", epr.read("SPEED" + 12), List::NodeType::VALUE);
-  current->next[1].initList("AMOUNT", epr.read("AMOUNT" + 13), 600);
-  current->next[2].initList("BACK", &menu.next[3]);
+  static const char* names3[] = {"COLOUR", "AMOUNT", "BACK", nullptr};
+  current->next.getPtr("COLOUR")->initList("COLOUR", 3, names3);
 
-  current = &menu.next[3].next[6];//initilize SNAKE
-  current->next[0].initList("COLOUR", epr.read("COLOUR" + 14), 359);
-  current->next[1].initList("AMOUNT", epr.read("AMOUNT" + 15), 600);
-  current->next[2].initList("BACK", &menu.next[3]);
+  static const char* names4[] = {"COLOUR", "AMOUNT", "SPEED", "BACK", nullptr};
+  current->next.getPtr("FLOW")->initList("FLOW", 4, names4);
+
+  static const char* names5[] = {"COLOUR FROM", "COLOUR TO", "AMOUNT", "SPEED", "BACK", nullptr};
+  current->next.getPtr("COLOUR CHANGE")->initList("COLOUR CHANGE", 5, names5);
+
+  static const char* names6[] = {"SPEED", "AMOUNT", "BACK", nullptr};
+  current->next.getPtr("RANDOM")->initList("RANDOM", 3, names6);
+
+  static const char* names7[] = {"SPEED", "AMOUNT", "BACK", nullptr};
+  current->next.getPtr("DRIFT")->initList("DRIFT", 3, names7);
+
+  static const char* names8[] = {"COLOUR", "AMOUNT", "BACK", nullptr};
+  current->next.getPtr("SNAKE")->initList("SNAKE", 3, names8);
+
+  current->next.getPtr("BACK")->initList("BACK", &menu);
+
+
+  current = current->next.getPtr("COLOUR");//initilize COLOUR
+  current->next.getPtr("COLOUR")->initList("COLOUR", epr.read("COLOUR" + eprID++), 359);
+  current->next.getPtr("AMOUNT")->initList("AMOUNT", epr.read("AMOUNT" + eprID++), 600);
+  current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
+
+  current = menu.next.getPtr("EFFECTS")->next.getPtr("FLOW");//initilize FLOW
+  current->next.getPtr("COLOUR")->initList("COLOUR", epr.read("COLOUR" + eprID++), 359);
+  current->next.getPtr("AMOUNT")->initList("AMOUNT", epr.read("AMOUNT" + eprID++), 600);
+  current->next.getPtr("SPEED")->initList("SPEED", epr.read("SPEED" + eprID++), 255);
+  current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
+
+  current = menu.next.getPtr("EFFECTS")->next.getPtr("COLOUR CHANGE");//initilize COLOUR CHANGE
+  current->next.getPtr("COLOUR FROM")->initList("COLOUR FROM", epr.read("COLOUR FROM" + eprID++), 359);
+  current->next.getPtr("COLOUR TO")->initList("COLOUR TO", epr.read("COLOUR TO" + eprID++), 359);
+  current->next.getPtr("AMOUNT")->initList("AMOUNT", epr.read("AMOUNT" + eprID++), 600);
+  current->next.getPtr("SPEED")->initList("SPEED", epr.read("SPEED" + eprID++), 200);
+  current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
+
+  current = menu.next.getPtr("EFFECTS")->next.getPtr("RANDOM");//initilize RANDOM
+  current->next.getPtr("SPEED")->initList("SPEED", epr.read("SPEED" + eprID++), 255);
+  current->next.getPtr("AMOUNT")->initList("AMOUNT", epr.read("AMOUNT"+ eprID++), 600);
+  current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
+
+  current = menu.next.getPtr("EFFECTS")->next.getPtr("DRIFT");//initilize DRIFT
+  current->next.getPtr("SPEED")->initList("SPEED", epr.read("SPEED" + eprID++), 255);
+  current->next.getPtr("AMOUNT")->initList("AMOUNT", epr.read("AMOUNT" + eprID++), 600);
+  current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
+
+  current = menu.next.getPtr("EFFECTS")->next.getPtr("SNAKE");//initilize SNAKE
+  current->next.getPtr("COLOUR")->initList("COLOUR", epr.read("COLOUR" + eprID++), 359);
+  current->next.getPtr("AMOUNT")->initList("AMOUNT", epr.read("AMOUNT" + eprID++), 600);
+  current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
+
   
   return menu;
 }

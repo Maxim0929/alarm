@@ -7,41 +7,37 @@ uint8_t List::IDcounter = 0;
 List::List(){
   this->nodeType = NONE;
   this->name = "";
-  this->next = nullptr;
+  this->next.setPtr(nullptr);
   this->prev = nullptr;
   this->value = 0;
   this->maxValue = 255;
   ID = IDcounter;
 }
 
-List::~List(){
-  delete[] next;
-}
 
-
-void List::initList(const char* name){
+void List::initList(const char* name){//function
   this->nodeType = FUNCTION;
   this->name = name;
-  this->next = nullptr;
+  this->next.setPtr(nullptr);
   this->prev = nullptr;
   this->value = 0;
   this->maxValue = 255;
   ID = IDcounter;
 }
 
-void List::initList(const char* name, List *prev){
+void List::initList(const char* name, List *prev){//back
   initList(name);
   this->prev = prev;
 }
 
-void List::initList(const char* name, uint8_t value, NodeType nodeType){
+void List::initList(const char* name, uint8_t value, const char** names){// list
   initList(name);
-  this->nodeType = nodeType;
-  if(nodeType == LIST) next = new List[value];
-  else IDcounter++;
+  this->nodeType = LIST;
+  next.setPtr(new List[value]);
+  next.setName(names);
   this->value = value;
 }
-void List::initList(const char* name, uint8_t value, int maxValue){
+void List::initList(const char* name, uint8_t value, int maxValue){//value
   initList(name);
   this->value = value;
   this->nodeType = VALUE;
@@ -118,6 +114,31 @@ List::NodeType List::getNodetype(){return nodeType;}
 uint8_t List::getID(){ return ID;}
 
 int List::getMaxValue(){ return maxValue; }
+
+
+//Listptr
+List::Listptr::Listptr(){}
+
+List::Listptr::~Listptr(){
+  delete[] ptr;
+}
+
+List* List::Listptr::getPtr(const char* name){
+  for(int i = 0; names[i] != nullptr; i++){
+    if(this->names[i] == name) {
+      return &ptr[i];
+    }
+  }
+  return nullptr;
+}
+List* List::Listptr::getPtr(const uint8_t index){return &ptr[index];}
+
+void List::Listptr::setPtr(List* ptr){ this->ptr = ptr;}
+void List::Listptr::setName(const char** names){this->names = names;}
+
+
+
+
 
 
 

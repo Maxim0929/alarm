@@ -14,12 +14,14 @@ struct Led{
 public:
   Led();
   ~Led();
-  void init(List& effects);
+  void init(List* menu);
 
   void fill(uint8_t red, uint8_t green, uint8_t blue, int ledNum);
   void fill(uint8_t red, uint8_t green, uint8_t blue);
   void fill(float hsv, int ledNum);
   void fill(float hsv);
+
+  void setBr(uint8_t br);
 
   void setBrightness(const uint8_t br);
   void clear();
@@ -33,11 +35,10 @@ private:
   CRGB* leds;
   StripState stripState;
 
-
-  struct Flow{
+struct Flow{
   public:
     Flow();
-    void init(List& effects);
+    void init(List* effects);
     void update(CRGB* leds);
     void update(CRGB* leds, List& effects);
     unsigned long startTime;
@@ -47,8 +48,23 @@ private:
   private:
     unsigned int speed;
     int start, amount;
+};
+  Flow flow;
+
+  struct ColorChange{
+    public:
+    ColorChange();
+    void init(List* effects);
+    void update(CRGB* leds);
+    void update(CRGB* leds, List& effects);
+    unsigned long startTime;
+    int colorHSVfrom, colorHSVto, colorHSVcurrent;
+    uint8_t r, g, b;
+    unsigned int speed;
+    int amount;
+    bool isUp;
   };
 
-  Flow flow;
+  ColorChange colorChange;
 };
 #endif

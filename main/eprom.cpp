@@ -6,11 +6,6 @@ Eprom::Eprom(){
 }
 
 Eprom::~Eprom(){}
-void Eprom::init(uint8_t &aHour, uint8_t &aMin, uint8_t &dBr){
-  // aHour = EEPROM.read(0);
-  // aMin = EEPROM.read(1);
-  // dBr = EEPROM.read(2);
-}
 
 
 void Eprom::write(const String& name, uint8_t value){
@@ -21,6 +16,8 @@ void Eprom::write(const String& name, uint8_t value){
       crnName += char(EEPROM.read(i));
     }
     if(name == crnName){
+      // Serial.print("found\t");
+      // Serial.println(name);
       EEPROM.write(EEPROM.read(address), value);
       break;
     }else{
@@ -28,8 +25,9 @@ void Eprom::write(const String& name, uint8_t value){
       crnName = "";
     }
   }
-
   if(EEPROM.read(address) == 0){
+    // Serial.print("not found\t");
+    // Serial.println(name);
     EEPROM.write(address, name.length() + 1 + address); // value address
     for(int i = address + 1, k = 0; i < EEPROM.read(address); i++, k++){
       EEPROM.write(i, name[k]);// value name
@@ -49,11 +47,16 @@ uint8_t Eprom::read(const String& name){
       crnName += char(EEPROM.read(i));
     }
     if(name == crnName){
+      // Serial.print("found\t");
+      // Serial.println(name);
+      // Serial.println(EEPROM.read(EEPROM.read(address)));
       return EEPROM.read(EEPROM.read(address));
       break;
     }else{
       address = EEPROM.read(address) + 1;
     }
   }
+  // Serial.print("not found\t");
+  //   Serial.println(name);
   return 0;
 }

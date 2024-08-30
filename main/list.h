@@ -18,11 +18,10 @@ public:
   List(const char* name);
   List(const char* name, List *prev);
   List(const char* name, uint8_t value, NodeType nodeType);
-
-  ~List();
+  
   void initList(const char* name);
   void initList(const char* name, List *prev);
-  void initList(const char* name, uint8_t value, NodeType nodeType);
+  void initList(const char* name, uint8_t value, const char** names);
   void List::initList(const char* name, uint8_t value, int maxValue);
 
   void update(uint8_t encState, const Display& dsp);
@@ -45,8 +44,23 @@ public:
 
   int getMaxValue();
 
+
+  struct Listptr{
+  public:
+    Listptr();
+    ~Listptr();
+    void setPtr(List* ptr);
+    List* getPtr(const char* name);
+    List* getPtr(const uint8_t index);
+
+    void setName(const char** names);
+  private:
+    char** names;
+    List* ptr;
+  };
+
   List& operator=(const List& other);
-  List* next;
+  Listptr next;
   List* prev;
 private:
   NodeType nodeType;

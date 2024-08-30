@@ -8,12 +8,13 @@ Led::Led(){
 
 Led::~Led(){delete[] leds;}
 
-void Led::init(List& effects){
+void Led::init(List* menu){
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_NUM);
   fill_solid(leds, LED_NUM, CRGB(0, 0, 0));
-  FastLED.setBrightness(128);
+  FastLED.setBrightness(menu->next.getPtr("LED BRIGHTNESS")->getValue(0));
   FastLED.show();
-  flow.init(effects);
+  flow.init(menu->next.getPtr("EFFECTS"));
+  colorChange.init(menu->next.getPtr("EFFECTS"));
 }
 
 void Led::fill(uint8_t red, uint8_t green, uint8_t blue, int ledNum){
@@ -39,6 +40,11 @@ void Led::fill(float hsv, int ledNum){
 }
 void Led::fill(float hsv){ fill(hsv, 600); }
 
+void Led::setBr(uint8_t br){
+  FastLED.setBrightness(br);
+  FastLED.show();
+}
+
 void Led::setBrightness(const uint8_t br){
   FastLED.setBrightness(br);
   FastLED.show();
@@ -50,7 +56,9 @@ void Led::clear(){
 
 void Led::updateStrip(List& effects, bool valueChanged){
   if(stripState == COLOUR && valueChanged){
-    fill(effects.next[1].next[0].getValue(0), effects.next[1].next[1].getValue(0));
+    fill(effects.next.getPtr("COLOUR")->next.getPtr("COLOUR")->getValue(0),
+         effects.next.getPtr("COLOUR")->next.getPtr("AMOUNT")->getValue(0));
+
   }else if(stripState == FLOW){
     if(valueChanged){
       flow.update(leds, effects);
@@ -60,23 +68,36 @@ void Led::updateStrip(List& effects, bool valueChanged){
       flow.update(leds);
     }
 
+  }else if(stripState == COLOUR_CHANGE){
+    if(valueChanged){
+      colorChange.update(leds, effects);
+      fill(colorChange.colorHSVcurrent, colorChange.amount);
+    }
+    else{
+      colorChange.update(leds);
+      fill(colorChange.colorHSVcurrent, colorChange.amount);
+    }
+
+    FastLED.show();
+
   }else if(stripState == OFF && valueChanged){
     fill(0,0,0);
   }
 
 }
 
-void Led::HSVtoRGB(int hsv, uint8_t& R, uint8_t& G, uint8_t& B){
+void Led::HSVtoRGB(int hsv, uint8_t& r, uint8_t& g, uint8_t& b){
   float X = 1.0 - abs(fmod(hsv / 60.0, 2.0) - 1.0);
+  double R,G,B;
   if(hsv < 60){ R = 1; G = X; B = 0; }
   else if(hsv < 120){ R = X; G = 1; B = 0; }
   else if(hsv < 180){ R = 0; G = 1; B = X; }
   else if(hsv < 240){ R = 0; G = X; B = 1; }
   else if(hsv < 300){ R = X; G = 0; B = 1; }
   else if(hsv < 360){ R = 1; G = 0; B = X; }
-  R = round(R * 255);
-  G = round(G * 255);
-  B = round(B * 255);
+  r = round(R * 255);
+  g = round(G * 255);
+  b = round(B * 255);
 }
 
 bool Led::setStripState(char* state){
@@ -94,8 +115,10 @@ bool Led::setStripState(char* state){
 StripState Led::getStripState() {return stripState;}
 
 
+
+
 //FLOW
-Led::Flow::Flow(){//not tested
+Led::Flow::Flow(){
   startTime = 0;
   speed = 1;
   amount = 1;
@@ -104,10 +127,10 @@ Led::Flow::Flow(){//not tested
   r = g = b = 0;
 }
 
-void Led::Flow::init(List &effects){//not tested
-  speed = effects.next[2].next[2].getValue(0);
-  amount = effects.next[2].next[1].getValue(0);
-  colorHSV = effects.next[2].next[0].getValue(0);
+void Led::Flow::init(List *effects){
+  speed = effects->next.getPtr("FLOW")->next.getPtr("SPEED")->getValue(0);
+  amount = effects->next.getPtr("FLOW")->next.getPtr("AMOUNT")->getValue(0);
+  colorHSV = effects->next.getPtr("FLOW")->next.getPtr("COLOUR")->getValue(0);
   start = 0;
 }
 
@@ -136,14 +159,65 @@ void Led::Flow::update(CRGB* leds){
 }
 
 void Led::Flow::update(CRGB* leds, List& effects){
-  amount = effects.next[2].next[1].getValue(0);
-  colorHSV = effects.next[2].next[0].getValue(0);
+  amount = effects.next.getPtr("FLOW")->next.getPtr("AMOUNT")->getValue(0);
+  colorHSV = effects.next.getPtr("FLOW")->next.getPtr("COLOUR")->getValue(0);
 
-  if(effects.next[2].next[2].getValue(0) != 0)
-    speed = effects.next[2].next[2].getValue(0);
+  if(effects.next.getPtr("FLOW")->next.getPtr("SPEED")->getValue(0) != 0)
+    speed = effects.next.getPtr("FLOW")->next.getPtr("SPEED")->getValue(0);
 
   startTime = millis();
-  return update(leds);
+  update(leds);
+}
+
+//COLOUR CHANGE
+Led::ColorChange::ColorChange(){
+ colorHSVfrom = 0;
+ colorHSVto = 20;
+ startTime = 0;
+ r = g = b = 0;
+ speed = 1;
+ isUp = 1;
+ amount = 300; 
+}
+
+void Led::ColorChange::init(List *effects){
+  colorHSVfrom = effects->next.getPtr("COLOUR CHANGE")->next.getPtr("COLOUR FROM")->getValue(0);
+  colorHSVto = effects->next.getPtr("COLOUR CHANGE")->next.getPtr("COLOUR TO")->getValue(0);
+  amount = effects->next.getPtr("COLOUR CHANGE")->next.getPtr("AMOUNT")->getValue(0);
+  speed = effects->next.getPtr("COLOUR CHANGE")->next.getPtr("SPEED")->getValue(0);
+}
+
+void Led::ColorChange::update(CRGB* leds){
+  if(millis() - startTime > 1000 / speed){
+    unsigned int change = round(speed * (millis() - startTime) / 1000);
+    if(isUp){
+      if(colorHSVcurrent + change >= colorHSVto)
+        isUp = !isUp;
+      else
+        colorHSVcurrent += change;
+    }
+    else{
+      if(colorHSVcurrent - change <= colorHSVfrom)
+        isUp = !isUp;
+      else
+        colorHSVcurrent -= change;
+    }
+    startTime = millis();
+
+  }
+}
+
+void Led::ColorChange::update(CRGB* leds, List& effects){
+  colorHSVfrom = effects.next.getPtr("COLOUR CHANGE")->next.getPtr("COLOUR FROM")->getValue(0);
+  colorHSVto = effects.next.getPtr("COLOUR CHANGE")->next.getPtr("COLOUR TO")->getValue(0);
+  amount = effects.next.getPtr("COLOUR CHANGE")->next.getPtr("AMOUNT")->getValue(0);
+  colorHSVcurrent = colorHSVfrom;
+
+  if(effects.next.getPtr("COLOUR CHANGE")->next.getPtr("SPEED")->getValue(0) != 0)
+    speed = effects.next.getPtr("COLOUR CHANGE")->next.getPtr("SPEED")->getValue(0);
+
+  startTime = millis();
+  update(leds);
 }
 
 
