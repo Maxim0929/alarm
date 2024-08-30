@@ -4,6 +4,7 @@
 
 #define LED_PIN 49
 #define LED_NUM 600
+#define UNCONNECTED_PIN A10
 
 #include <FastLED.h>
 #include <Arduino.h>
@@ -35,36 +36,51 @@ private:
   CRGB* leds;
   StripState stripState;
 
-struct Flow{
-  public:
-    Flow();
-    void init(List* effects);
-    void update(CRGB* leds);
-    void update(CRGB* leds, List& effects);
-    unsigned long startTime;
-    int colorHSV;
-    uint8_t r, g, b;
+  struct Flow{
+    public:
+      Flow();
+      void init(List* effects);
+      void update(CRGB* leds);
+      void update(CRGB* leds, List& effects);
+      unsigned long startTime;
+      int colorHSV;
+      uint8_t r, g, b;
 
-  private:
-    unsigned int speed;
-    int start, amount;
-};
+    private:
+      unsigned int speed;
+      int start, amount;
+  };
   Flow flow;
 
   struct ColorChange{
     public:
-    ColorChange();
-    void init(List* effects);
-    void update(CRGB* leds);
-    void update(CRGB* leds, List& effects);
-    unsigned long startTime;
-    int colorHSVfrom, colorHSVto, colorHSVcurrent;
-    uint8_t r, g, b;
-    unsigned int speed;
-    int amount;
-    bool isUp;
+      ColorChange();
+      void init(List* effects);
+      void update(CRGB* leds);
+      void update(CRGB* leds, List& effects);
+      unsigned long startTime;
+      int colorHSVfrom, colorHSVto, colorHSVcurrent;
+      unsigned int speed;
+      int amount;
+      bool isUp;
   };
-
   ColorChange colorChange;
+
+  struct RandomEffect{
+    public:
+      RandomEffect();
+      ~RandomEffect();
+      void init(List* effects);
+      void update(CRGB* leds);
+      void update(CRGB* leds, List& effects);
+      void clearPos(CRGB* leds);
+      void generatePos();
+      void showLeds(CRGB* leds);
+      unsigned long startTime;
+      unsigned int delay;
+      int amount;
+      unsigned int* ledsOnPos;
+  };
+  RandomEffect randomEffect;
 };
 #endif

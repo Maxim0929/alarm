@@ -1,6 +1,7 @@
 #pragma once
 #ifndef _EPROM_
 #define _EPROM_
+#define FIRST 0
 
 #include <EEPROM.h>
 #include <Arduino.h>

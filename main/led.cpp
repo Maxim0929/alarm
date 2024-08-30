@@ -77,8 +77,14 @@ void Led::updateStrip(List& effects, bool valueChanged){
       colorChange.update(leds);
       fill(colorChange.colorHSVcurrent, colorChange.amount);
     }
-
     FastLED.show();
+  }else if(stripState == RANDOM){
+    if(valueChanged){
+      randomEffect.update(leds, effects);
+    }
+    else{
+      randomEffect.update(leds);
+    }
 
   }else if(stripState == OFF && valueChanged){
     fill(0,0,0);
@@ -172,9 +178,8 @@ void Led::Flow::update(CRGB* leds, List& effects){
 //COLOUR CHANGE
 Led::ColorChange::ColorChange(){
  colorHSVfrom = 0;
- colorHSVto = 20;
+ colorHSVto = 0;
  startTime = 0;
- r = g = b = 0;
  speed = 1;
  isUp = 1;
  amount = 300; 
@@ -219,6 +224,72 @@ void Led::ColorChange::update(CRGB* leds, List& effects){
   startTime = millis();
   update(leds);
 }
+
+//RANDOM
+Led::RandomEffect::RandomEffect(){
+ startTime = 0;
+ delay = 1;
+ amount = 300;
+ ledsOnPos = new unsigned int[600];
+}
+
+Led::RandomEffect::~RandomEffect(){
+  delete[] ledsOnPos;
+}
+
+void Led::RandomEffect::init(List *effects){
+  amount = effects->next.getPtr("RANDOM")->next.getPtr("AMOUNT")->getValue(0);
+  delay = effects->next.getPtr("RANDOM")->next.getPtr("DELAY")->getValue(0);
+  randomSeed(analogRead(UNCONNECTED_PIN));
+}
+
+void Led::RandomEffect::update(CRGB* leds){
+  if(millis() - startTime >= delay){
+    for(int i = 0; i < ceil(amount / 10.0); i++){
+      unsigned int index = random(0, amount);
+      leds[ledsOnPos[index]] = CRGB(0,0,0);
+      ledsOnPos[index] = random(0, 600);
+      leds[ledsOnPos[index]] = CRGB(random(0, 255), random(0, 255), random(0, 255));
+    }
+    FastLED.show();
+  
+    startTime = millis();
+
+  }
+}
+
+void Led::RandomEffect::update(CRGB* leds, List& effects){
+  clearPos(leds);
+  amount = effects.next.getPtr("RANDOM")->next.getPtr("AMOUNT")->getValue(0);
+
+  if(effects.next.getPtr("RANDOM")->next.getPtr("DELAY")->getValue(0) != 0)
+    delay = effects.next.getPtr("RANDOM")->next.getPtr("DELAY")->getValue(0);
+  generatePos();
+  showLeds(leds);
+  startTime = millis();
+  update(leds);
+}
+void Led::RandomEffect::generatePos(){
+  for(int i = 0; i < amount; i++){
+    ledsOnPos[i] = random(0, 600);
+  }
+}
+
+void Led::RandomEffect::clearPos(CRGB* leds){
+  for(int i = 0; i < 600; i++){
+    if(i < amount) ledsOnPos[i] = 0;
+    leds[i] = CRGB(0,0,0);
+  }
+  FastLED.show();
+}
+
+void Led::RandomEffect::showLeds(CRGB* leds){
+  for(int i = 0; i < amount; i++){
+    leds[ledsOnPos[i]] = CRGB(random(0, 255), random(0, 255), random(0, 255));
+  }
+}
+
+
 
 
 

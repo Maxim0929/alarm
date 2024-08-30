@@ -1,5 +1,4 @@
 #include "eprom.h"
-#define FIRST 0
 
 Eprom::Eprom(){
   if(FIRST) EEPROM.write(0,0);

@@ -9,7 +9,7 @@
 #define MENULAST 5
 #define EFFECTLAST 7
 enum Func{TIME, SETVAL, SETTIME, SETALARM, NONEFUNC};
-
+//speed in random to delay
 void listClick();
 void initMenu(List & menu);
 bool setVal(uint8_t encState, const List& list);
@@ -186,7 +186,7 @@ void initMenu(List & menu){
   static const char* names5[] = {"COLOUR FROM", "COLOUR TO", "AMOUNT", "SPEED", "BACK", nullptr};
   current->next.getPtr("COLOUR CHANGE")->initList("COLOUR CHANGE", 5, names5);
 
-  static const char* names6[] = {"SPEED", "AMOUNT", "BACK", nullptr};
+  static const char* names6[] = {"DELAY", "AMOUNT", "BACK", nullptr};
   current->next.getPtr("RANDOM")->initList("RANDOM", 3, names6);
 
   static const char* names7[] = {"SPEED", "AMOUNT", "BACK", nullptr};
@@ -217,7 +217,7 @@ void initMenu(List & menu){
   current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
 
   current = menu.next.getPtr("EFFECTS")->next.getPtr("RANDOM");//initilize RANDOM
-  current->next.getPtr("SPEED")->initList("SPEED", epr.read("SPEED" + eprID++), 255);
+  current->next.getPtr("DELAY")->initList("DELAY", epr.read("DELAY" + eprID++), 5000);// DELAY = 500; every 500 ms 10% of pixels change color amd position
   current->next.getPtr("AMOUNT")->initList("AMOUNT", epr.read("AMOUNT"+ eprID++), 600);
   current->next.getPtr("BACK")->initList("BACK", menu.next.getPtr("EFFECTS"));
 
