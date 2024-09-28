@@ -10,67 +10,87 @@ struct Display;
 struct Time;
 struct Alarm;
 
-struct List{
-public:
-  enum NodeType{LIST, FUNCTION, VALUE, NONE};
+// value
+struct Value{
+  public:
 
-  List();
-  List(const char* name);
-  List(const char* name, List *prev);
-  List(const char* name, uint8_t value, NodeType nodeType);
-  
-  void initList(const char* name);
-  void initList(const char* name, List *prev);
-  void initList(const char* name, uint8_t value, const char** names);
-  void List::initList(const char* name, uint8_t value, int maxValue);
+  Value();
+  Value(String name, uint8_t value);
 
-  void update(uint8_t encState, const Display& dsp);
+  int getValue(bool oneByte);
+  void setValue(int value, bool oneByte);
 
-  uint8_t getCurrent();
-  uint8_t getFirst();
+  String getName();
+  void setName(String name);
 
-  void setCurrent(uint8_t current);
-  void setFirst(uint8_t first);
-
-  int getValue(bool isReal);
-  void setValue(int value);
-
-  char* getName();
-  void setName(char* name);
-
-  NodeType getNodetype();
+  void setMaxValue(int maxValue);
+  int getMaxValue();
 
   uint8_t getID();
 
-  int getMaxValue();
-
-
-  struct Listptr{
-  public:
-    Listptr();
-    ~Listptr();
-    void setPtr(List* ptr);
-    List* getPtr(const char* name);
-    List* getPtr(const uint8_t index);
-
-    void setName(const char** names);
   private:
-    char** names;
-    List* ptr;
-  };
-
-  List& operator=(const List& other);
-  Listptr next;
-  List* prev;
-private:
-  NodeType nodeType;
-  static uint8_t first;
-  static uint8_t current;
-  static uint8_t IDcounter;
   int value;
-  char* name;
-  uint8_t ID;
   int maxValue;
+  String name;
+  uint8_t ID;
+  static uint8_t  IDcounter;
 };
+
+
+// list
+
+struct List{
+  public:
+  List();
+  ~List();
+
+  List& operator=(List& other);
+  // init functions
+  void initName(String name, String* names, uint8_t namesNumber);
+  void initList(uint8_t listsNumber);
+  void initVal(uint8_t valuesNumber, Eprom& epr, int maxValue[]);
+
+  void initAll(String name, String* names, uint8_t namesNumber, uint8_t listsNumber, uint8_t valuesNumber, Eprom& epr, int maxValue[]);
+  // other
+  void update(uint8_t encState, const Display& dsp);
+  void goBack();
+
+  //geters and seters
+  void setPrev(List* prev);
+  List* getPrev();
+
+  List* getList(String name);
+  Value* getValue(String name);
+  
+  List* getLists();
+  Value* getValues();
+  String* getNames();
+  uint8_t getNamesNumber();
+  String getName();
+
+  uint8_t getCurrent();
+  void setCurrent(uint8_t current);
+
+  uint8_t getFirst();
+  void setFirst(uint8_t first);
+
+  uint8_t getListsNumber();
+  uint8_t getValuesNumber();
+
+
+
+  private:
+  List* lists;
+  Value* values;
+  String* names;
+  
+  List* prev;
+
+  uint8_t namesNumber, listsNumber, valuesNumber;
+  String name;
+
+  static uint8_t first, current;
+};
+
 #endif
 

@@ -4,7 +4,7 @@ MyEncoder::MyEncoder(): enc(CLK, DT, SW){
   enc.setType(TYPE2);
   enc.setTickMode(AUTO);
 }
-bool MyEncoder::updateEncoder(){
+bool MyEncoder::update(){
   if(enc.isClick()) encState = 1;
   else if(enc.isLeft()) encState = 2;
   else if(enc.isRight()) encState = 3;

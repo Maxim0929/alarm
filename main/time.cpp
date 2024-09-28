@@ -38,6 +38,7 @@ bool Time::update(){
 }
 
 bool Time::set(const uint8_t encState){
+
   if(encState == 2){
     if(setHour){
       if(hour > 0) hour--;
@@ -47,8 +48,7 @@ bool Time::set(const uint8_t encState){
       if(min > 0) min--;
       else min = 59;
     }
-  }
-  if(encState == 3){
+  }else if(encState == 3){
     if(setHour){
       if(hour < 23) hour++;
       else hour = 0;
@@ -57,24 +57,21 @@ bool Time::set(const uint8_t encState){
       if(min < 59) min++;
       else min = 0;
     }
-  }
-  if(encState == 5){
+  }else if(encState == 5){
     if(setHour){
       if(hour > 9) hour-=10;
     }
     else{
       if(min > 9) min-=10;
     }
-  }
-  if(encState == 6){
+  }else if(encState == 6){
     if(setHour){
       if(hour < 14) hour+=10;
     }
     else{
       if(min < 50) min+=10;
     }
-  }
-  if(encState == 1){
+  }else if(encState == 1){
     if(setHour) setHour = 0;
     else{
       setHour = 1;

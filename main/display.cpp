@@ -5,14 +5,23 @@
 
 Display::Display(): lcd(0x27, 20 , 4){
 }
-void Display::printNum(uint8_t number){
-      printDsp(floor(number / 100), 1);
-      printDsp(floor((number % 100) / 10), 2);
-      printDsp(number % 10, 3);
+
+void Display::printVal(int value, uint8_t pos){
+
+  lcd.setCursor(17, pos);
+  lcd.print("   ");
+
+  if(value < 10) lcd.setCursor(19, pos);
+  else if(value < 100) lcd.setCursor(18, pos);
+  else lcd.setCursor(17, pos);
+
+  lcd.print(value);
+    
 }
 
-void Display::setup(const List& menu){
-  br = menu.next.getPtr("DISPLAY BRIGHTNESS")->getValue(0);
+void Display::setup(uint8_t br){
+  this->br = br;
+  //Serial.println(br);
   pinMode(BR_PIN, OUTPUT);
   analogWrite(BR_PIN, br);
   lcd.init();
@@ -25,6 +34,11 @@ void Display::setup(const List& menu){
 
 void Display::printList(const List& list, bool doClear){
   uint8_t max = 4;
+  uint8_t first = list.getFirst();
+  uint8_t current = list.getCurrent();
+  uint8_t listsNumber = list.getListsNumber();
+  uint8_t valuesNumber = list.getValuesNumber();
+  int value = 0;
   if(doClear){
      clear();
   }else{
@@ -34,13 +48,29 @@ void Display::printList(const List& list, bool doClear){
     }
   }
 
-  lcd.setCursor(0, list.getCurrent() - list.getFirst());
+  lcd.setCursor(0, current - first);
   lcd.print(">");
+
   if(doClear){
-    if(list.getValue(0) < 4) max = 3;
+    if(list.getNamesNumber() < 4) max = list.getNamesNumber();
+
     for(int i = 0; i < max; i++){
       lcd.setCursor(1, i);
-      lcd.print(list.next.getPtr(list.getFirst() + i)->getName());
+
+      if(first + i < listsNumber || first + i >= listsNumber + valuesNumber){// if List
+        lcd.print(list.getNames()[first + i]);
+
+      }else if(first + i < listsNumber + valuesNumber){// if value
+         lcd.print(list.getNames()[first + i]);
+
+         value = list.getValues()[first + i - listsNumber].getValue(0);
+
+         if(value < 10) lcd.setCursor(19, i);
+         else if(value < 100) lcd.setCursor(18, i);
+         else lcd.setCursor(17, i);
+
+         lcd.print(value);
+      }
     }
   }
 }//list: o - menu, 1 - effects, 2 - trait
@@ -75,7 +105,7 @@ void Display::printDsp(uint8_t number, uint8_t place){
   }
 // place 0-3, number 0-10; 10 are dots
 
-void Display::setBr(uint8_t br){
+void Display::setBrightness(uint8_t br){
   analogWrite(BR_PIN, br);
 }
 

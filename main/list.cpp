@@ -1,64 +1,144 @@
 #include "list.h"
+#include "eprom.h"
 
-uint8_t List::first = 0;
-uint8_t List::current = 0;
-uint8_t List::IDcounter = 0;
+// value struct
+uint8_t Value::IDcounter = 0;
 
-List::List(){
-  this->nodeType = NONE;
+Value::Value(){
   this->name = "";
-  this->next.setPtr(nullptr);
-  this->prev = nullptr;
   this->value = 0;
   this->maxValue = 255;
   ID = IDcounter;
-}
-
-
-void List::initList(const char* name){//function
-  this->nodeType = FUNCTION;
-  this->name = name;
-  this->next.setPtr(nullptr);
-  this->prev = nullptr;
-  this->value = 0;
-  this->maxValue = 255;
-  ID = IDcounter;
-}
-
-void List::initList(const char* name, List *prev){//back
-  initList(name);
-  this->prev = prev;
-}
-
-void List::initList(const char* name, uint8_t value, const char** names){// list
-  initList(name);
-  this->nodeType = LIST;
-  next.setPtr(new List[value]);
-  next.setName(names);
-  this->value = value;
-}
-void List::initList(const char* name, uint8_t value, int maxValue){//value
-  initList(name);
-  this->value = value;
-  this->nodeType = VALUE;
-  this->maxValue = maxValue;
   IDcounter++;
 }
 
-
-
-List& List::operator=(const List& other){
-  this->name = other.name;
-  this->value = other.value;
-  this->next = other.next;
-  this->nodeType = other.nodeType;
+Value::Value(String name, uint8_t value){
+  this->name = name;
+  this->value = value;
+  this->maxValue = 255;
+  ID = IDcounter;
+  IDcounter++;
 }
 
+String Value::getName(){
+  return name;
+}
+void Value::setName(String name){
+  this->name = name;
+}
+
+
+void Value::setValue(int value, bool oneByte){
+  if(oneByte) this->value = round(value / 255.0 * maxValue);
+  else this->value = value;
+}
+
+int Value::getValue(bool oneByte){
+  if(oneByte) return round(value * 255.0 / maxValue);
+  else return value;
+}
+
+void Value::setMaxValue(int maxValue){
+  this->maxValue = maxValue;
+}
+int Value::getMaxValue(){ return maxValue; }
+
+uint8_t Value::getID(){
+  return ID;
+}
+
+//list struct
+uint8_t List::first = 0;
+uint8_t List::current = 0;
+
+List::List(){
+  values = nullptr;
+  lists = nullptr;
+  names = nullptr;
+
+  valuesNumber = 0;
+  listsNumber = 0;
+  namesNumber = 0;
+
+  prev = nullptr;
+
+  name = "";
+}
+
+List::~List(){
+  Serial.println("List destroctor was called");
+  delete[] names;
+  delete[] values;
+  delete[] lists;
+}
+
+List& List::operator=(List& other){
+  this->lists = other.lists;
+  this->values = other.values;
+  this->names = other.names;
+
+  this->listsNumber = listsNumber;
+  this->valuesNumber = valuesNumber;
+  this->namesNumber = namesNumber;
+
+  this->name = other.name;
+
+  other.lists = nullptr;
+  other.values = nullptr;
+  other.names= nullptr;
+  Serial.println("be carefull operator = was called!!!");
+  return *this;
+
+}
+
+
+
+void List::initName(String name, String* names, uint8_t namesNumber){
+  this->names = names;
+  this->namesNumber = namesNumber;
+  this->name = name;
+}
+
+void List::initList(uint8_t listsNumber){
+  if(listsNumber + valuesNumber <= namesNumber){
+    this->listsNumber = listsNumber;
+    this->lists = new List[listsNumber];
+  }else{
+    Serial.println("In function List::initList: valueNumber + listNumber can not be bigger than namesNumber");
+  }
+}
+
+void List::initVal(uint8_t valuesNumber, Eprom& epr, int maxValue[]){
+  if(valuesNumber + listsNumber <= namesNumber){
+    this->valuesNumber = valuesNumber;
+
+    values = new Value[valuesNumber];
+
+    for(int i = 0; i < valuesNumber; i++){
+      values[i].setName(names[i + listsNumber]);
+      values[i].setMaxValue(maxValue[i]);
+      values[i].setValue(epr.read(names[i + listsNumber] + String(values[i].getID())), 1);
+    }
+
+  }else{
+    Serial.println("In function List::initVal: valueNumber + listNumber can not be bigger than namesNumber");
+  }
+}
+
+
+void List::initAll(String name, String* names, uint8_t namesNumber, uint8_t listsNumber, uint8_t valuesNumber, Eprom& epr, int maxValue[]){
+  this->initName(name, names, namesNumber);
+  
+  if(listsNumber > 0) this->initList(listsNumber);
+  if(valuesNumber > 0) this->initVal(valuesNumber, epr, maxValue);
+  
+}
+
+
 void List::update(uint8_t encState, const Display& dsp){
-  if(this->nodeType != LIST) return 0;
   bool print = 0;
   bool clear = 0;
-  uint8_t last = value - 1;
+  uint8_t last = namesNumber - 1;
 
   if(encState == 2){
     if(current == 0){
@@ -94,47 +174,62 @@ void List::update(uint8_t encState, const Display& dsp){
   }
 }
 
+
+
+void List::setPrev(List *prev){this->prev = prev; }
+List* List::getPrev(){return prev;Serial.println(prev->getName());}
+
+
+List* List::getList(String name){
+  for(int i = 0; i < listsNumber; i++){
+    if(names[i] == name) return &lists[i];
+  }
+  Serial.println(name);
+  Serial.println("getList() returned nullptr");
+  delay(200);
+  return nullptr;
+}
+
+Value* List::getValue(String name){
+  for(int i = 0; i < valuesNumber; i++){
+    if(names[i + listsNumber] == name) return &values[i];
+  }
+  Serial.println("getValue() returned nullptr");
+  delay(200);
+  return nullptr;
+}
+
+
+List* List::getLists(){
+  if(listsNumber > 0) return lists;
+  else return nullptr;
+}
+
+
+Value* List::getValues(){
+  if(valuesNumber > 0) return values;
+  else return nullptr;
+}
+
+String* List::getNames(){return names;}
+
+uint8_t List::getNamesNumber(){return namesNumber;}
+
+String List::getName(){return name;}
+
+uint8_t List::getListsNumber(){return listsNumber;}
+
+uint8_t List::getValuesNumber(){return valuesNumber;}
+
+
 uint8_t List::getCurrent(){return current;}
 uint8_t List::getFirst(){return first;}
 
 void List::setCurrent(uint8_t current){List::current = current;}
 void List::setFirst(uint8_t first){List::first = first;}
 
-int List::getValue(bool isReal){
-  if(isReal) return value; 
-  else return round(value / 255.0 * maxValue);
-}
-void List::setValue(int value){ this->value = value;}
-
-char* List::getName(){return this->name;}
-void List::setName(char* name){this->name = name;}
-
-List::NodeType List::getNodetype(){return nodeType;}
-
-uint8_t List::getID(){ return ID;}
-
-int List::getMaxValue(){ return maxValue; }
 
 
-//Listptr
-List::Listptr::Listptr(){}
-
-List::Listptr::~Listptr(){
-  delete[] ptr;
-}
-
-List* List::Listptr::getPtr(const char* name){
-  for(int i = 0; names[i] != nullptr; i++){
-    if(this->names[i] == name) {
-      return &ptr[i];
-    }
-  }
-  return nullptr;
-}
-List* List::Listptr::getPtr(const uint8_t index){return &ptr[index];}
-
-void List::Listptr::setPtr(List* ptr){ this->ptr = ptr;}
-void List::Listptr::setName(const char** names){this->names = names;}
 
 
 

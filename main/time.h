@@ -23,14 +23,13 @@ public:
   bool set(const uint8_t encState);
   uint8_t getHour();
   uint8_t getMin();
-
+  bool setHour;
 private:
   Metro clockTimer;
   RTC_DS3231 rtc;
   uint8_t hour;
   uint8_t min;
   DateTime now;
-  bool setHour;
 };
 
 struct Alarm{

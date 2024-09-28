@@ -13,15 +13,18 @@ struct Eprom;
 
 
 struct Display{
+
 public:
   Display();
-  void setup(const List& menu);
+  void setup(uint8_t br);
   void printTime(uint8_t hour, uint8_t min);
   void printList(const List& list, bool doClear);
   void printList(const List& list);
-  void setBr(uint8_t br);
-  void printNum(uint8_t number);
+  void setBrightness(uint8_t br);
+  void printVal(int value, uint8_t pos);
   void clear();
+
+
 private:
   LiquidCrystal_I2C lcd;
   uint8_t br;
