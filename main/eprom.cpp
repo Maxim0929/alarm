@@ -2,110 +2,125 @@
 
 Eprom::Eprom(){
   if(FIRST) {
-    EEPROM.write(0,0);
-    Serial.println("WARNING in eporm.h FIRST = 1!");
+    EEPROM.update(0, 0xFF);
+    Serial.println("WARNING in eeprom.h FIRST = 1!");
   }
 }
 
 Eprom::~Eprom(){}
 
 
-void Eprom::write(const String name, uint8_t value){
-  if(COMPILE) Serial.println("epr.write\t");
-  int address = 0;
-  String crnName = "";
+// val address, name[0], name[1], ... , val
+void Eprom::write(const String& name, uint8_t value){
+  if(COMPILE) Serial.println("epr.write()\t");
 
+  int addr = searchAddress(name);
 
-  while(EEPROM.read(address) != 0){// search if element with this name exists
-
-    if(name.length() == EEPROM.read(address) - address - 1){
-
-      for(int i = address + 1; i < EEPROM.read(address); i++){
-        crnName += char(EEPROM.read(i));
-      }
-      
-      if(name == crnName){
-        if(COMPILE){
-          Serial.print("found\t");
-          Serial.println(name);
-        }
-        EEPROM.update(EEPROM.read(address), value);
-        return;
-      }else{
-        address = EEPROM.read(address) + 1;
-        crnName = "";
-      }
-
-    }else{
-      address = EEPROM.read(address) + 1;
-    }
+  //found
+  int valAddr = EEPROM.read(addr);
+  if(valAddr != 0xFF){
+    EEPROM.update(valAddr, value);
+    return;
   }
-  
-  if(EEPROM.read(address) == 0){
-    if(COMPILE){
-      Serial.print("not found\t");
-      Serial.println(name);
-    }
-
-    EEPROM.update(address, name.length() + 1 + address); // value address // +1
-    for(int i = address + 1, k = 0; i < EEPROM.read(address); i++, k++){
-      EEPROM.write(i, name[k]);// value name
-    }
-    EEPROM.update(EEPROM.read(address), value); // value
-    EEPROM.update(EEPROM.read(address) + 1, 0);
+  // not found
+  // cowerflow check
+  if(addr + name.length() + 2 > EEPROM.length()){
+    Serial.println("EEPROM overflow");
+    return;
   }
-  
+  // write value address
+  valAddr = name.length() + 1 + addr;
+  EEPROM.update(addr, valAddr);
+
+  for(int i = addr + 1; i < valAddr; i++){
+    // write name
+    EEPROM.write(i, name[i - addr - 1]);
+  }
+  // write value
+  EEPROM.update(valAddr, value);
+  // set last address to 0xFF
+  EEPROM.update(valAddr + 1, 0xFF);
 }
 
-uint8_t Eprom::read(const String name){
-  if(COMPILE) Serial.println("epr.read\t");
-  int address = 0;
-  String crnName = "";
-  while(EEPROM.read(address) != 0){// search if element with this name exists
 
-    if(name.length() == EEPROM.read(address)- address - 1){
 
-      for(int i = address + 1; i < EEPROM.read(address); i++){
-        crnName += char(EEPROM.read(i));
-      }
+uint8_t Eprom::read(const String& name){
+  if(COMPILE) Serial.println("epr.read()\t");
 
-      if(name == crnName){
-        if(COMPILE){
-          Serial.print("found\t");
-          Serial.println(name);
-          Serial.println(EEPROM.read(EEPROM.read(address)));
-        }
-        return EEPROM.read(EEPROM.read(address));
-      }else{
-        address = EEPROM.read(address) + 1;
-        crnName = "";
-      }
+  int addr = searchAddress(name);
 
-    }else{
-      address = EEPROM.read(address) + 1;
-    }
-  }
-  if(COMPILE){
-    Serial.print("not found\t");
-    Serial.println(name);
-  }
+  if(EEPROM.read(addr) == 0xFF) return 0;
 
-  if(FIRST) write(name, 0);
-
-  return 0;
+  return EEPROM.read(EEPROM.read(addr));
 }
+
+
+
+// return address of the value of the name. If this name does not exist return last address.
+int Eprom::searchAddress(const String& name){
+  int address = 0;
+
+  while(EEPROM.read(address) != 0xFF){
+    uint8_t valAddr = EEPROM.read(address);
+
+    if(name.length() != valAddr - address - 1){
+      address = valAddr + 1;
+      continue;
+    }
+
+    bool found = true; 
+    for(int i = address + 1; i < valAddr; ++i){
+      if(char(EEPROM.read(i)) != name[i - address - 1]){
+        address = valAddr + 1;
+        found = false;
+        break;
+      }
+    }
+
+    if(!found) continue;
+    if(COMPILE) Serial.println("Found " + name + " at address " + address);
+    return address;
+  }
+
+  if(COMPILE) Serial.println(name + " not found");
+  return address;
+}
+
 
 
 void Eprom::print(){
   int address = 0;
-  while(EEPROM.read(address) != 0){
+
+  while(EEPROM.read(address) != 0xFF){
+    int valAddr = EEPROM.read(address);
     Serial.print(EEPROM.read(address));
-    for(int i = address + 1; i < EEPROM.read(address); i++){
+    Serial.print(" ");
+
+    for(int i = address + 1; i < valAddr; i++){
       Serial.print(char(EEPROM.read(i)));
     }
     Serial.print(" ");
-    Serial.println(EEPROM.read(EEPROM.read(address)));
+    Serial.println(EEPROM.read(valAddr));
 
-    address = EEPROM.read(address) + 1;
+    address = valAddr + 1;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

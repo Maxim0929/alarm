@@ -2,7 +2,8 @@
 #ifndef _DISPLAY_
 #define _DISPLAY_
 
-#define BR_PIN 8
+#define BR_PIN 7
+#define DISPLAY_LINES 4
 
 
 #include <LiquidCrystal_I2C.h>
@@ -16,19 +17,17 @@ struct Display{
 
 public:
   Display();
-  void setup(uint8_t br);
+  void setup(uint8_t br = 50);
   void printTime(uint8_t hour, uint8_t min);
-  void printList(const List& list, bool doClear);
-  void printList(const List& list);
+  void printList(const List& list, bool doClear = 1);
   void setBrightness(uint8_t br);
   void printVal(int value, uint8_t pos);
   void clear();
 
 
 private:
-  LiquidCrystal_I2C lcd;
-  uint8_t br;
-  bool brFlag;
+  LiquidCrystal_I2C lcd_;
+
   uint8_t custChar[8][8] = {
     {31, 31, 31, 31, 31, 0, 0, 0},//five up
     {0, 0, 0, 31, 31, 31, 31, 31},// five down
@@ -52,7 +51,8 @@ private:
     {255, 0, 0, 255, 255, 2, 2, 255, 3, 3, 3, 255, 1, 1, 1, 255},
     {4, 6, 5, 7, 4, 6, 5, 7}
   };
-  void printDsp(uint8_t number, uint8_t place);
+  void printDots();
+  void printNum(uint8_t number, uint8_t place);
 };
 #endif
 

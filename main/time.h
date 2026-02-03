@@ -3,7 +3,7 @@
 #define _TIME_
 
 #define BR_MAX 110
-#define DAWN_TIME 5  // продолжительность рассвета (в минутах)
+#define DAWN_TIME 5
 #define ALARM_LED_NUM 340
 
 #include <RTClib.h>

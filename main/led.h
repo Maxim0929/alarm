@@ -15,7 +15,7 @@ struct Led{
 public:
   Led();
   ~Led();
-  void init(uint8_t ledBr);
+  void init(uint8_t ledB, List* effectsr);
 
   void fill(uint8_t red, uint8_t green, uint8_t blue, int ledNum);
   void fill(uint8_t red, uint8_t green, uint8_t blue);
@@ -25,7 +25,7 @@ public:
   void setBrightness(const uint8_t br);
   void clear();
   void updateStrip(List& effects, bool valueChanged);
-  // void HSVtoRGB(int hsv, uint8_t& R, uint8_t& G, uint8_t& B);
+  void HSVtoRGB(int hsv, uint8_t& r, uint8_t& g, uint8_t& b);
 
   bool setStripState(String state);
   StripState getStripState();
@@ -34,21 +34,20 @@ private:
   CRGB* leds;
   StripState stripState;
 
-  // struct Flow{
-  //   public:
-  //     Flow();
-  //     void init(List* effects);
-  //     void update(CRGB* leds);
-  //     void update(CRGB* leds, List& effects);
-  //     unsigned long startTime;
-  //     int colorHSV;
-  //     uint8_t r, g, b;
+  struct Flow{
+    public:
+      Flow();
+      void init(List* flow);
+      void update(CRGB* leds);
+      void update(CRGB* leds, List& effects);
+      unsigned long startTime;
+      int colorHSV;
+      uint8_t r, g, b;
 
-  //   private:
-  //     unsigned int speed;
-  //     int start, amount;
-  // };
-  // Flow flow;
+    private:
+      int start, amount, speed;// px per sec
+  };
+  Flow flow;
 
   // struct ColorChange{
   //   public:

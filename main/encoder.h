@@ -2,20 +2,30 @@
 #ifndef _ENCODER_
 #define _ENCODER_
 
-#define CLK 27
-#define DT 25
-#define SW 23
+#define CLK 5
+#define DT 4
+#define SW 3
 
 #include "GyverEncoder.h"
 #include <Arduino.h>
+
+enum State{
+  NONE,
+  CLICK,
+  HOLD,
+  LEFT,
+  RIGHT,
+  LEFTH,
+  RIGHTH
+};
 
 struct MyEncoder{
 public:
   MyEncoder();
   bool update();
-  uint8_t getEncstate();
+  State state(){ return state_;}
 private:
-  Encoder enc;
-  uint8_t encState;
+  Encoder enc_;
+  State state_;
 };
 #endif

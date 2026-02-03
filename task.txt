@@ -6,3 +6,14 @@
 #5 feat add random to effects
 #6 feat add drift to effects
 #7 feat add snake to effects
+
+for encoder
+pinMode(CLK, INPUT_PULLUP);
+pinMode(DT,  INPUT_PULLUP);
+pinMode(SW,  INPUT_PULLUP);
+
+
+Add more languages
+Revise effect names
+https://chatgpt.com/s/t_69625e79c4448191858ddb19ed1379f5
+eeprom limit

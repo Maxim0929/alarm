@@ -1,23 +1,21 @@
 #include "encoder.h"
 
-MyEncoder::MyEncoder(): enc(CLK, DT, SW){
-  enc.setType(TYPE2);
-  enc.setTickMode(AUTO);
+MyEncoder::MyEncoder(): enc_(CLK, DT, SW){
+  enc_.setType(TYPE2);
+  enc_.setTickMode(AUTO);
+  state_ = State::NONE;
 }
 bool MyEncoder::update(){
-  if(enc.isClick()) encState = 1;
-  else if(enc.isLeft()) encState = 2;
-  else if(enc.isRight()) encState = 3;
-  else if(enc.isHolded()) encState = 4;
-  else if(enc.isLeftH()) encState = 5;
-  else if(enc.isRightH()) encState = 6;
+  if(enc_.isClick()) state_ = State::CLICK;
+  else if(enc_.isHolded()) state_ = State::HOLD;
+  else if(enc_.isLeftH()) state_ = State::LEFTH;
+  else if(enc_.isRightH()) state_ = State::RIGHTH;
+  else if(enc_.isLeft()) state_ = State::LEFT;
+  else if(enc_.isRight()) state_ = State::RIGHT;
   else{
-    encState = 0;
+    state_ = State::NONE;
     return 0;
   }
   return 1;
 }
 
-uint8_t MyEncoder::getEncstate(){
-  return encState;
-}
